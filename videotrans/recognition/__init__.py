@@ -45,7 +45,6 @@ def check_model_name(recogn_type=0, name='',source_language_isLast=False,source_
         return True
     if name.find('/') > 0:
         return True
-
     if name.endswith('.en') and source_language_isLast:
         return '.en结尾的模型不可用于自动检测' if config.defaulelang == 'zh' else 'Models ending in .en may not be used for automated detection'
 

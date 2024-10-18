@@ -11,6 +11,7 @@ import requests
 
 from videotrans.configure import config
 from videotrans.configure._base import BaseCon
+from videotrans.configure._except import IPLimitExceeded
 from videotrans.util import tools
 
 
@@ -78,11 +79,14 @@ class BaseTTS(BaseCon):
         self._signal(text="")
         try:
             self._exec()
+        except IPLimitExceeded as e:
+            raise
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout, requests.exceptions.ProxyError):
             api_url_msg = f',请检查Api地址,当前Api: {self.api_url}' if self.api_url else ''
-            proxy_msg = '无' if not self.proxies else f'{list(self.proxies.values())[0]}'
+            proxy_msg = '' if not self.proxies else f'{list(self.proxies.values())[0]}'
+            proxy_msg = f'' if not proxy_msg else f',当前代理:{proxy_msg}'
             raise Exception(
-                f'网络连接失败，请检查代理地址{api_url_msg}, 当前代理: {proxy_msg}' if config.defaulelang == 'zh' else 'Network connection failed, please check the proxy or set the proxy address')
+                f'网络连接失败{api_url_msg} {proxy_msg}' if config.defaulelang == 'zh' else 'Network connection failed, please check the proxy or set the proxy address')
         except Exception as e:
             self.error = str(e) if not self.error else self.error
             self._signal(text=self.error, type="error")
@@ -108,7 +112,7 @@ class BaseTTS(BaseCon):
                 err += 1
         # 错误量大于 1/3
         if err > int(len(self.queue_tts) / 3):
-            msg = f'{config.transobj["peiyindayu31"]}:{self.error if self.error is not True else ""}'
+            msg = f'{self.error if self.error else ""} {config.transobj["peiyindayu31"]}:{self.error if self.error is not True else ""}'
             self._signal(text=msg, type="error")
             raise Exception(msg)
         # 去除末尾静音

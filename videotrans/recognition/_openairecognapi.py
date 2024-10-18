@@ -67,7 +67,7 @@ class OpenaiAPIRecogn(BaseRecogn):
             # 发送请求
             transcript = requests.post(self.api_url+f'/audio/translations',verify=False, headers= {
                 "Authorization": f"Bearer {config.params['openairecognapi_key']}",
-                "Content-Type": "multipart/form-data"
+                #"Content-Type": "multipart/form-data"
             }, files={
                 "file": open(self.audio_file, 'rb')
             }, data={
@@ -84,7 +84,6 @@ class OpenaiAPIRecogn(BaseRecogn):
                 raise Exception( f'{resdata}' if  self.api_url.startswith("https://api.openai.com") else f'该api不支持返回带时间戳字幕格式 {self.api_url} ')
 
             segments=resdata['segments']
-            
 
             if len(segments) < 1:
                 msg = '未返回识别结果，请检查文件是否包含清晰人声' if config.defaulelang == 'zh' else 'No result returned, please check if the file contains clear vocals.'
@@ -110,8 +109,11 @@ class OpenaiAPIRecogn(BaseRecogn):
         except json.decoder.JSONDecodeError as e:
             msg=re.sub(r'</?\w+[^>]*?>','',transcript.text,re.I|re.S)            
             raise Exception(msg)
-        except ConnectionError as e:
-            msg = f'网络连接错误，请检查代理、api地址等:{str(e)}' if config.defaulelang == 'zh' else str(e)
+        except (requests.ConnectionError, requests.HTTPError, requests.Timeout, requests.exceptions.ProxyError) as e:
+            api_url_msg = f',请检查Api地址,当前Api: {self.api_url}' if self.api_url else ''
+            proxy_msg = '' if not self.proxies else f'{list(self.proxies.values())[0]}'
+            proxy_msg = f'' if not proxy_msg else f',当前代理:{proxy_msg}'
+            msg = f'网络连接错误{api_url_msg} {proxy_msg}' if config.defaulelang == 'zh' else str(e)
             raise Exception(msg)
         except Exception:
             raise

@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 import sys
 import time
@@ -70,7 +71,7 @@ class GPTSoVITS(BaseTTS):
 
                 if not self.api_url.endswith('/tts'):
                     self.api_url+='/tts'
-            config.logger.info(f'{data=}\n{self.api_url=}')
+            config.logger.info(f'GPT-SoVITS post:{data=}\n{self.api_url=}')
             # 克隆声音
             response = requests.post(f"{self.api_url}", json=data, proxies=self.proxies, timeout=3600)
             # 获取响应头中的Content-Type
@@ -79,6 +80,7 @@ class GPTSoVITS(BaseTTS):
             if 'application/json' in content_type:
                 # 如果是JSON数据，使用json()方法解析
                 data = response.json()
+                config.logger.info(f'GPT-SoVITS return:{data=}')
                 self.error = f"GPT-SoVITS返回错误信息-1:{data}"
                 return
 
@@ -96,9 +98,6 @@ class GPTSoVITS(BaseTTS):
                 self.inst.precent += 0.1
             self.error = ''
             self.has_done += 1
-        except requests.ConnectionError as e:
-            self.error = str(e)
-            config.logger.exception(e, exc_info=True)
         except Exception as e:
             self.error = str(e)
             config.logger.exception(e, exc_info=True)
